@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "facility_id": "Nutrien Allan",
+    "timestamp": "2026-07-06T10:36:00Z"
+  },
+  "structural_health": {
+    "overall_health_score": 94,
+    "beams_requiring_inspection": 2,
+    "strain_gauges": [
+      {
+        "sensor_id": "SG-01",
+        "location": "Beam A-02_Base",
+        "current_stress_mpa": 12.1,
+        "utilization_percent": 65.0,
+        "status": "nominal"
+      },
+      {
+        "sensor_id": "SG-02",
+        "location": "Beam A-02_Splice",
+        "current_stress_mpa": 14.5,
+        "utilization_percent": 78.3,
+        "status": "nominal"
+      },
+      {
+        "sensor_id": "SG-03",
+        "location": "Beam B-07_Base",
+        "current_stress_mpa": 16.8,
+        "utilization_percent": 91.2,
+        "status": "warning"
+      },
+      {
+        "sensor_id": "SG-04",
+        "location": "Beam B-07_Splice",
+        "current_stress_mpa": 18.4,
+        "utilization_percent": 98.5,
+        "status": "critical"
+      },
+      {
+        "sensor_id": "SG-05",
+        "location": "Beam C-14_Base",
+        "current_stress_mpa": 11.2,
+        "utilization_percent": 55.4,
+        "status": "nominal"
+      },
+      {
+        "sensor_id": "SG-06",
+        "location": "Beam C-14_Splice",
+        "current_stress_mpa": 11.8,
+        "utilization_percent": 58.1,
+        "status": "nominal"
+      },
+      {
+        "sensor_id": "SG-07",
+        "location": "Beam D-05_Base",
+        "current_stress_mpa": 17.2,
+        "utilization_percent": 93.0,
+        "status": "warning"
+      },
+      {
+        "sensor_id": "SG-08",
+        "location": "Beam D-05_Splice",
+        "current_stress_mpa": 13.1,
+        "utilization_percent": 68.9,
+        "status": "nominal"
+      }
+    ]
+  }
+}
