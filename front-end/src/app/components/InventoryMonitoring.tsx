@@ -5,119 +5,63 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
 import { useSite } from "../context/SiteContext";
+import { useState, useEffect } from "react";
+import { inventoryApi } from "../../services/api";
 
 export function InventoryMonitoring() {
   const { selectedSite } = useSite();
+  const [inventoryData, setInventoryData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const siteInventoryData: Record<string, any> = {
-    "Nutrien Allan": {
-      totalInventory: "8,450 tons",
-      totalChange: "+255",
-      totalCapacity: 10000,
-      avgDailyChange: "+36",
-      barns: [
-        { id: 1, name: "Barn 1", current: 2450, capacity: 3000, status: "good", change: "+120" },
-        { id: 2, name: "Barn 2", current: 2100, capacity: 2500, status: "good", change: "+85" },
-        { id: 3, name: "Barn 3", current: 1900, capacity: 2000, status: "warning", change: "-150" },
-        { id: 4, name: "Barn 4", current: 2000, capacity: 2500, status: "good", change: "+200" },
-      ],
-      volumeData: [
-        { date: "Mar 22", total: 8195 },
-        { date: "Mar 23", total: 8260 },
-        { date: "Mar 24", total: 8340 },
-        { date: "Mar 25", total: 8410 },
-        { date: "Mar 26", total: 8450 },
-        { date: "Mar 27", total: 8465 },
-        { date: "Mar 28", total: 8450 },
-      ],
-    },
-    "Nutrien Lanigan": {
-      totalInventory: "9,200 tons",
-      totalChange: "+180",
-      totalCapacity: 10000,
-      avgDailyChange: "+26",
-      barns: [
-        { id: 5, name: "Barn 1", current: 2600, capacity: 2800, status: "good", change: "+80" },
-        { id: 6, name: "Barn 2", current: 2400, capacity: 2600, status: "good", change: "+45" },
-        { id: 7, name: "Barn 3", current: 2100, capacity: 2300, status: "good", change: "+30" },
-        { id: 8, name: "Barn 4", current: 2100, capacity: 2300, status: "good", change: "+25" },
-      ],
-      volumeData: [
-        { date: "Mar 22", total: 9020 },
-        { date: "Mar 23", total: 9060 },
-        { date: "Mar 24", total: 9100 },
-        { date: "Mar 25", total: 9130 },
-        { date: "Mar 26", total: 9165 },
-        { date: "Mar 27", total: 9185 },
-        { date: "Mar 28", total: 9200 },
-      ],
-    },
-    "Nutrien Cory": {
-      totalInventory: "7,800 tons",
-      totalChange: "+120",
-      totalCapacity: 10000,
-      avgDailyChange: "+17",
-      barns: [
-        { id: 9,  name: "Barn 1", current: 2200, capacity: 2800, status: "good", change: "+50" },
-        { id: 10, name: "Barn 2", current: 1900, capacity: 2500, status: "good", change: "+30" },
-        { id: 11, name: "Barn 3", current: 1800, capacity: 2200, status: "warning", change: "+20" },
-        { id: 12, name: "Barn 4", current: 1900, capacity: 2500, status: "good", change: "+20" },
-      ],
-      volumeData: [
-        { date: "Mar 22", total: 7680 },
-        { date: "Mar 23", total: 7705 },
-        { date: "Mar 24", total: 7730 },
-        { date: "Mar 25", total: 7750 },
-        { date: "Mar 26", total: 7770 },
-        { date: "Mar 27", total: 7785 },
-        { date: "Mar 28", total: 7800 },
-      ],
-    },
-    "Nutrien Rocanville": {
-      totalInventory: "8,900 tons",
-      totalChange: "+215",
-      totalCapacity: 10000,
-      avgDailyChange: "+31",
-      barns: [
-        { id: 13, name: "Barn 1", current: 2500, capacity: 2800, status: "good", change: "+90" },
-        { id: 14, name: "Barn 2", current: 2300, capacity: 2600, status: "good", change: "+65" },
-        { id: 15, name: "Barn 3", current: 2000, capacity: 2300, status: "good", change: "+35" },
-        { id: 16, name: "Barn 4", current: 2100, capacity: 2300, status: "good", change: "+25" },
-      ],
-      volumeData: [
-        { date: "Mar 22", total: 8685 },
-        { date: "Mar 23", total: 8725 },
-        { date: "Mar 24", total: 8770 },
-        { date: "Mar 25", total: 8815 },
-        { date: "Mar 26", total: 8850 },
-        { date: "Mar 27", total: 8875 },
-        { date: "Mar 28", total: 8900 },
-      ],
-    },
-    "Mosaic Esterhazy": {
-      totalInventory: "8,100 tons",
-      totalChange: "+145",
-      totalCapacity: 10000,
-      avgDailyChange: "+21",
-      barns: [
-        { id: 17, name: "Barn 1", current: 2300, capacity: 2800, status: "good", change: "+70" },
-        { id: 18, name: "Barn 2", current: 2000, capacity: 2500, status: "good", change: "+40" },
-        { id: 19, name: "Barn 3", current: 1850, capacity: 2200, status: "warning", change: "+15" },
-        { id: 20, name: "Barn 4", current: 1950, capacity: 2500, status: "good", change: "+20" },
-      ],
-      volumeData: [
-        { date: "Mar 22", total: 7955 },
-        { date: "Mar 23", total: 7985 },
-        { date: "Mar 24", total: 8020 },
-        { date: "Mar 25", total: 8045 },
-        { date: "Mar 26", total: 8070 },
-        { date: "Mar 27", total: 8085 },
-        { date: "Mar 28", total: 8100 },
-      ],
-    },
+  useEffect(() => {
+    async function fetchInventoryData() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await inventoryApi.getInventory(selectedSite);
+        setInventoryData(data);
+      } catch (err) {
+        console.error('Error fetching inventory data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load inventory data');
+        // Fallback to mock data on error
+        setInventoryData({
+          totalInventory: "8,450 tons",
+          totalChange: "+255",
+          totalCapacity: 10000,
+          avgDailyChange: "+36",
+          barns: [
+            { id: 1, name: "Barn 1", current: 2450, capacity: 3000, status: "good", change: "+120" },
+            { id: 2, name: "Barn 2", current: 2100, capacity: 2500, status: "good", change: "+85" },
+          ],
+          volumeData: [
+            { date: "Mar 22", total: 8195 },
+            { date: "Mar 23", total: 8260 },
+            { date: "Mar 24", total: 8340 },
+            { date: "Mar 25", total: 8410 },
+            { date: "Mar 26", total: 8450 },
+            { date: "Mar 27", total: 8465 },
+            { date: "Mar 28", total: 8450 },
+          ],
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchInventoryData();
+  }, [selectedSite]);
+
+  const siteData = inventoryData || {
+    totalInventory: "0 tons",
+    totalChange: "+0",
+    totalCapacity: 0,
+    avgDailyChange: "+0",
+    barns: [],
+    volumeData: [],
   };
 
-  const currentData = siteInventoryData[selectedSite];
+  const currentData = siteData;
   const barns = currentData.barns;
   const volumeData = currentData.volumeData;
 

@@ -1,49 +1,48 @@
 import { Link } from "react-router";
 import { Building2, AlertTriangle, Package, AlertCircle, CheckCircle, ArrowRight, Activity } from "lucide-react";
 import { useSite } from "../context/SiteContext";
+import { useState, useEffect } from "react";
+import { dashboardApi } from "../../services/api";
 
 export function Dashboard() {
   const { selectedSite } = useSite();
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const siteData: Record<string, any> = {
-    "Nutrien Allan": {
-      structuralHealth: "94%",
-      beamsInspection: 2,
-      foreignAlerts: 3,
-      inventory: "8,450 tons",
-      capacity: "87%",
-    },
-    "Nutrien Lanigan": {
-      structuralHealth: "96%",
-      beamsInspection: 1,
-      foreignAlerts: 2,
-      inventory: "9,200 tons",
-      capacity: "92%",
-    },
-    "Nutrien Cory": {
-      structuralHealth: "92%",
-      beamsInspection: 3,
-      foreignAlerts: 4,
-      inventory: "7,800 tons",
-      capacity: "78%",
-    },
-    "Nutrien Rocanville": {
-      structuralHealth: "95%",
-      beamsInspection: 1,
-      foreignAlerts: 1,
-      inventory: "8,900 tons",
-      capacity: "89%",
-    },
-    "Mosaic Esterhazy": {
-      structuralHealth: "93%",
-      beamsInspection: 2,
-      foreignAlerts: 5,
-      inventory: "8,100 tons",
-      capacity: "81%",
-    },
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await dashboardApi.getSiteData(selectedSite);
+        setDashboardData(data);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+        // Fallback to mock data on error
+        setDashboardData({
+          structuralHealth: "94%",
+          beamsInspection: 2,
+          foreignAlerts: 3,
+          inventory: "8,450 tons",
+          capacity: "87%",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDashboardData();
+  }, [selectedSite]);
+
+  const currentData = dashboardData || {
+    structuralHealth: "0%",
+    beamsInspection: 0,
+    foreignAlerts: 0,
+    inventory: "0 tons",
+    capacity: "0%",
   };
-
-  const currentData = siteData[selectedSite];
 
   const stats = [
     {

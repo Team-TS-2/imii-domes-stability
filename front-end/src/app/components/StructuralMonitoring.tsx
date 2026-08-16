@@ -4,7 +4,8 @@ import {
   ResponsiveContainer, ReferenceArea, ReferenceLine,
 } from "recharts";
 import { useSite } from "../context/SiteContext";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { structuralApi } from "../../services/api";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -43,136 +44,53 @@ export function StructuralMonitoring() {
   const { selectedSite } = useSite();
   const [showForecast, setShowForecast] = useState(false);
   const [forecastDays, setForecastDays] = useState<7 | 14 | 30>(7);
+  const [structuralData, setStructuralData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const siteBeamData: Record<string, any> = {
-    "Nutrien Allan": {
-      totalBeams: 8, healthy: 6, warning: 2,
-      warningBeamLabels: ["Beam B-05", "Beam B-07"],
-      beams: [
-        { id: "B-01", location: "Barn 1 - North", status: "good",    stress: 45, lastInspection: "2026-03-15" },
-        { id: "B-02", location: "Barn 1 - South", status: "good",    stress: 42, lastInspection: "2026-03-15" },
-        { id: "B-03", location: "Barn 2 - North", status: "good",    stress: 48, lastInspection: "2026-03-20" },
-        { id: "B-04", location: "Barn 2 - South", status: "good",    stress: 51, lastInspection: "2026-03-20" },
-        { id: "B-05", location: "Barn 3 - North", status: "warning", stress: 68, lastInspection: "2026-03-10" },
-        { id: "B-06", location: "Barn 3 - South", status: "good",    stress: 44, lastInspection: "2026-03-25" },
-        { id: "B-07", location: "Barn 4 - North", status: "warning", stress: 72, lastInspection: "2026-03-05" },
-        { id: "B-08", location: "Barn 4 - South", status: "good",    stress: 39, lastInspection: "2026-03-25" },
-      ],
-      stressData: [
-        { date: "Mar 22", beam1: 62, beam2: 65, average: 48 },
-        { date: "Mar 23", beam1: 64, beam2: 67, average: 49 },
-        { date: "Mar 24", beam1: 65, beam2: 68, average: 48 },
-        { date: "Mar 25", beam1: 66, beam2: 69, average: 47 },
-        { date: "Mar 26", beam1: 67, beam2: 70, average: 48 },
-        { date: "Mar 27", beam1: 67, beam2: 71, average: 48 },
-        { date: "Mar 28", beam1: 68, beam2: 72, average: 47 },
-      ],
-    },
-    "Nutrien Lanigan": {
-      totalBeams: 10, healthy: 9, warning: 1,
-      warningBeamLabels: ["Beam B-17"],
-      beams: [
-        { id: "B-11", location: "Barn 1 - North", status: "good",    stress: 42, lastInspection: "2026-03-20" },
-        { id: "B-12", location: "Barn 1 - South", status: "good",    stress: 40, lastInspection: "2026-03-20" },
-        { id: "B-13", location: "Barn 2 - North", status: "good",    stress: 46, lastInspection: "2026-03-22" },
-        { id: "B-14", location: "Barn 2 - South", status: "good",    stress: 48, lastInspection: "2026-03-22" },
-        { id: "B-15", location: "Barn 3 - North", status: "good",    stress: 44, lastInspection: "2026-03-25" },
-        { id: "B-16", location: "Barn 3 - South", status: "good",    stress: 45, lastInspection: "2026-03-25" },
-        { id: "B-17", location: "Barn 4 - North", status: "warning", stress: 67, lastInspection: "2026-03-10" },
-        { id: "B-18", location: "Barn 4 - South", status: "good",    stress: 41, lastInspection: "2026-03-26" },
-        { id: "B-19", location: "Barn 5 - North", status: "good",    stress: 43, lastInspection: "2026-03-26" },
-        { id: "B-20", location: "Barn 5 - South", status: "good",    stress: 47, lastInspection: "2026-03-26" },
-      ],
-      stressData: [
-        { date: "Mar 22", beam1: 60, beam2: null, average: 45 },
-        { date: "Mar 23", beam1: 62, beam2: null, average: 45 },
-        { date: "Mar 24", beam1: 63, beam2: null, average: 44 },
-        { date: "Mar 25", beam1: 64, beam2: null, average: 45 },
-        { date: "Mar 26", beam1: 65, beam2: null, average: 44 },
-        { date: "Mar 27", beam1: 66, beam2: null, average: 45 },
-        { date: "Mar 28", beam1: 67, beam2: null, average: 44 },
-      ],
-    },
-    "Nutrien Cory": {
-      totalBeams: 12, healthy: 9, warning: 3,
-      warningBeamLabels: ["Beam B-23", "Beam B-25", "Beam B-27"],
-      beams: [
-        { id: "B-21", location: "Barn 1 - North", status: "good",    stress: 47, lastInspection: "2026-03-15" },
-        { id: "B-22", location: "Barn 1 - South", status: "good",    stress: 44, lastInspection: "2026-03-15" },
-        { id: "B-23", location: "Barn 2 - North", status: "warning", stress: 70, lastInspection: "2026-03-08" },
-        { id: "B-24", location: "Barn 2 - South", status: "good",    stress: 50, lastInspection: "2026-03-20" },
-        { id: "B-25", location: "Barn 3 - North", status: "warning", stress: 69, lastInspection: "2026-03-08" },
-        { id: "B-26", location: "Barn 3 - South", status: "good",    stress: 46, lastInspection: "2026-03-25" },
-        { id: "B-27", location: "Barn 4 - North", status: "warning", stress: 73, lastInspection: "2026-03-05" },
-        { id: "B-28", location: "Barn 4 - South", status: "good",    stress: 41, lastInspection: "2026-03-25" },
-        { id: "B-29", location: "Barn 5 - North", status: "good",    stress: 45, lastInspection: "2026-03-24" },
-        { id: "B-30", location: "Barn 5 - South", status: "good",    stress: 43, lastInspection: "2026-03-24" },
-        { id: "B-31", location: "Barn 6 - North", status: "good",    stress: 48, lastInspection: "2026-03-23" },
-        { id: "B-32", location: "Barn 6 - South", status: "good",    stress: 42, lastInspection: "2026-03-23" },
-      ],
-      stressData: [
-        { date: "Mar 22", beam1: 65, beam2: 68, average: 50 },
-        { date: "Mar 23", beam1: 66, beam2: 69, average: 50 },
-        { date: "Mar 24", beam1: 67, beam2: 70, average: 49 },
-        { date: "Mar 25", beam1: 68, beam2: 71, average: 50 },
-        { date: "Mar 26", beam1: 68, beam2: 72, average: 49 },
-        { date: "Mar 27", beam1: 69, beam2: 72, average: 50 },
-        { date: "Mar 28", beam1: 70, beam2: 73, average: 49 },
-      ],
-    },
-    "Nutrien Rocanville": {
-      totalBeams: 8, healthy: 7, warning: 1,
-      warningBeamLabels: ["Beam B-37"],
-      beams: [
-        { id: "B-33", location: "Barn 1 - North", status: "good",    stress: 43, lastInspection: "2026-03-18" },
-        { id: "B-34", location: "Barn 1 - South", status: "good",    stress: 41, lastInspection: "2026-03-18" },
-        { id: "B-35", location: "Barn 2 - North", status: "good",    stress: 47, lastInspection: "2026-03-22" },
-        { id: "B-36", location: "Barn 2 - South", status: "good",    stress: 49, lastInspection: "2026-03-22" },
-        { id: "B-37", location: "Barn 3 - North", status: "warning", stress: 66, lastInspection: "2026-03-12" },
-        { id: "B-38", location: "Barn 3 - South", status: "good",    stress: 42, lastInspection: "2026-03-26" },
-        { id: "B-39", location: "Barn 4 - North", status: "good",    stress: 45, lastInspection: "2026-03-26" },
-        { id: "B-40", location: "Barn 4 - South", status: "good",    stress: 40, lastInspection: "2026-03-27" },
-      ],
-      stressData: [
-        { date: "Mar 22", beam1: 61, beam2: null, average: 46 },
-        { date: "Mar 23", beam1: 62, beam2: null, average: 46 },
-        { date: "Mar 24", beam1: 63, beam2: null, average: 45 },
-        { date: "Mar 25", beam1: 64, beam2: null, average: 46 },
-        { date: "Mar 26", beam1: 64, beam2: null, average: 45 },
-        { date: "Mar 27", beam1: 65, beam2: null, average: 46 },
-        { date: "Mar 28", beam1: 66, beam2: null, average: 45 },
-      ],
-    },
-    "Mosaic Esterhazy": {
-      totalBeams: 10, healthy: 8, warning: 2,
-      warningBeamLabels: ["Beam B-45", "Beam B-47"],
-      beams: [
-        { id: "B-41", location: "Barn 1 - North", status: "good",    stress: 46, lastInspection: "2026-03-16" },
-        { id: "B-42", location: "Barn 1 - South", status: "good",    stress: 43, lastInspection: "2026-03-16" },
-        { id: "B-43", location: "Barn 2 - North", status: "good",    stress: 49, lastInspection: "2026-03-21" },
-        { id: "B-44", location: "Barn 2 - South", status: "good",    stress: 52, lastInspection: "2026-03-21" },
-        { id: "B-45", location: "Barn 3 - North", status: "warning", stress: 69, lastInspection: "2026-03-09" },
-        { id: "B-46", location: "Barn 3 - South", status: "good",    stress: 45, lastInspection: "2026-03-24" },
-        { id: "B-47", location: "Barn 4 - North", status: "warning", stress: 71, lastInspection: "2026-03-06" },
-        { id: "B-48", location: "Barn 4 - South", status: "good",    stress: 40, lastInspection: "2026-03-25" },
-        { id: "B-49", location: "Barn 5 - North", status: "good",    stress: 44, lastInspection: "2026-03-25" },
-        { id: "B-50", location: "Barn 5 - South", status: "good",    stress: 48, lastInspection: "2026-03-25" },
-      ],
-      stressData: [
-        { date: "Mar 22", beam1: 64, beam2: 66, average: 49 },
-        { date: "Mar 23", beam1: 65, beam2: 67, average: 49 },
-        { date: "Mar 24", beam1: 66, beam2: 68, average: 48 },
-        { date: "Mar 25", beam1: 67, beam2: 69, average: 49 },
-        { date: "Mar 26", beam1: 68, beam2: 70, average: 48 },
-        { date: "Mar 27", beam1: 68, beam2: 70, average: 49 },
-        { date: "Mar 28", beam1: 69, beam2: 71, average: 48 },
-      ],
-    },
+  useEffect(() => {
+    async function fetchStructuralData() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await structuralApi.getBeams(selectedSite);
+        setStructuralData(data);
+      } catch (err) {
+        console.error('Error fetching structural data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load structural data');
+        // Fallback to mock data on error
+        setStructuralData({
+          totalBeams: 8, healthy: 6, warning: 2,
+          beams: [
+            { id: "B-01", location: "Barn 1 - North", status: "good",    stress: 45, lastInspection: "2026-03-15" },
+            { id: "B-02", location: "Barn 1 - South", status: "good",    stress: 42, lastInspection: "2026-03-15" },
+          ],
+          stressData: [
+            { date: "Mar 22", beam1: 62, beam2: 65, average: 48 },
+            { date: "Mar 23", beam1: 64, beam2: 67, average: 49 },
+            { date: "Mar 24", beam1: 65, beam2: 68, average: 48 },
+            { date: "Mar 25", beam1: 66, beam2: 69, average: 47 },
+            { date: "Mar 26", beam1: 67, beam2: 70, average: 48 },
+            { date: "Mar 27", beam1: 67, beam2: 71, average: 48 },
+            { date: "Mar 28", beam1: 68, beam2: 72, average: 47 },
+          ],
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchStructuralData();
+  }, [selectedSite]);
+
+  const currentData = structuralData || {
+    totalBeams: 0, healthy: 0, warning: 0,
+    beams: [],
+    stressData: [],
   };
-
-  const currentData = siteBeamData[selectedSite];
+  
   const beams = currentData.beams;
-  const stressData: Array<{ date: string; beam1: number | null; beam2: number | null; average: number | null }> = currentData.stressData;
+  const stressData: Array<{ date: string; beam1: number | null; beam2?: number | null; average: number }> = currentData.stressData;
   const hasBeam2 = currentData.warning > 1;
 
   // ── Forecast computation ──────────────────────────────────────────────────

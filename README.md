@@ -125,13 +125,38 @@ imii-domes-stability/
 └── DEPLOYMENT.md         # Deployment guide
 ```
 
+## 📚 Documentation
+
+### New to AWS? Start Here:
+1. **[QUICK_START.md](./QUICK_START.md)** - Start here! Overview of what you need
+2. **[AWS_SETUP_GUIDE.md](./AWS_SETUP_GUIDE.md)** - Complete AWS account setup (step-by-step)
+3. **[DEPLOYMENT_QUICK_REFERENCE.md](./DEPLOYMENT_QUICK_REFERENCE.md)** - Quick reference for deployment info
+
+### For Integration & APIs:
+- **[API_INTEGRATION_GUIDE.md](./API_INTEGRATION_GUIDE.md)** - Complete API documentation
+- **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** - Project implementation details
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Deployment procedures
+
+### DynamoDB Tables
+Your CDK stack includes **5 pre-configured DynamoDB tables**:
+- `imii-sites` - Site information
+- `imii-beams` - Structural monitoring data
+- `imii-detections` - Foreign material detections
+- `imii-inventory` - Barn inventory levels
+- `imii-timeseries` - Historical metrics
+
+**No manual database setup needed!** Just run `cdk deploy` and all tables are created automatically.
+
+---
+
 ## Quick Start
 
 ### Prerequisites
 
 - Node.js 20.x or later
 - pnpm (for front-end)
-- AWS Account with CLI configured
+- **AWS Account** ([Setup Guide](./AWS_SETUP_GUIDE.md))
+- AWS CLI configured (`aws configure`)
 - AWS CDK CLI: `npm install -g aws-cdk`
 
 ### 1. Clone the Repository

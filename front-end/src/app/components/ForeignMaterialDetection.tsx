@@ -1,7 +1,8 @@
 import { AlertTriangle, CheckCircle, Camera, Clock, ChevronDown, ChevronUp, X, ZoomIn } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { useSite } from "../context/SiteContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { detectionApi } from "../../services/api";
 
 const detectionImages: Record<number, { url: string; caption: string; camId: string; detectionBox?: { top: string; left: string; width: string; height: string } }> = {
   1: {
@@ -46,95 +47,55 @@ export function ForeignMaterialDetection() {
   const { selectedSite } = useSite();
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [lightboxId, setLightboxId] = useState<number | null>(null);
+  const [detectionData, setDetectionData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const siteDetectionData: Record<string, any> = {
-    "Nutrien Allan": {
-      activeAlerts: 3,
-      resolvedToday: 3,
-      cameras: 16,
-      accuracy: "98.5%",
-      weeklyData: [
-        { day: "Mon", seeds: 3, droppings: 5, dust: 2 },
-        { day: "Tue", seeds: 2, droppings: 4, dust: 1 },
-        { day: "Wed", seeds: 4, droppings: 6, dust: 3 },
-        { day: "Thu", seeds: 2, droppings: 3, dust: 2 },
-        { day: "Fri", seeds: 3, droppings: 7, dust: 2 },
-        { day: "Sat", seeds: 1, droppings: 4, dust: 1 },
-        { day: "Sun", seeds: 2, droppings: 5, dust: 2 },
-      ],
-    },
-    "Nutrien Lanigan": {
-      activeAlerts: 2,
-      resolvedToday: 4,
-      cameras: 20,
-      accuracy: "99.1%",
-      weeklyData: [
-        { day: "Mon", seeds: 2, droppings: 4, dust: 1 },
-        { day: "Tue", seeds: 1, droppings: 3, dust: 1 },
-        { day: "Wed", seeds: 3, droppings: 5, dust: 2 },
-        { day: "Thu", seeds: 1, droppings: 2, dust: 1 },
-        { day: "Fri", seeds: 2, droppings: 6, dust: 1 },
-        { day: "Sat", seeds: 1, droppings: 3, dust: 0 },
-        { day: "Sun", seeds: 1, droppings: 4, dust: 1 },
-      ],
-    },
-    "Nutrien Cory": {
-      activeAlerts: 4,
-      resolvedToday: 2,
-      cameras: 18,
-      accuracy: "97.8%",
-      weeklyData: [
-        { day: "Mon", seeds: 4, droppings: 6, dust: 3 },
-        { day: "Tue", seeds: 3, droppings: 5, dust: 2 },
-        { day: "Wed", seeds: 5, droppings: 7, dust: 4 },
-        { day: "Thu", seeds: 3, droppings: 4, dust: 3 },
-        { day: "Fri", seeds: 4, droppings: 8, dust: 3 },
-        { day: "Sat", seeds: 2, droppings: 5, dust: 2 },
-        { day: "Sun", seeds: 3, droppings: 6, dust: 3 },
-      ],
-    },
-    "Nutrien Rocanville": {
-      activeAlerts: 1,
-      resolvedToday: 5,
-      cameras: 16,
-      accuracy: "99.3%",
-      weeklyData: [
-        { day: "Mon", seeds: 1, droppings: 3, dust: 1 },
-        { day: "Tue", seeds: 1, droppings: 2, dust: 0 },
-        { day: "Wed", seeds: 2, droppings: 4, dust: 1 },
-        { day: "Thu", seeds: 1, droppings: 2, dust: 1 },
-        { day: "Fri", seeds: 2, droppings: 5, dust: 1 },
-        { day: "Sat", seeds: 0, droppings: 2, dust: 0 },
-        { day: "Sun", seeds: 1, droppings: 3, dust: 1 },
-      ],
-    },
-    "Mosaic Esterhazy": {
-      activeAlerts: 5,
-      resolvedToday: 1,
-      cameras: 22,
-      accuracy: "98.2%",
-      weeklyData: [
-        { day: "Mon", seeds: 5, droppings: 7, dust: 4 },
-        { day: "Tue", seeds: 4, droppings: 6, dust: 3 },
-        { day: "Wed", seeds: 6, droppings: 8, dust: 5 },
-        { day: "Thu", seeds: 4, droppings: 5, dust: 4 },
-        { day: "Fri", seeds: 5, droppings: 9, dust: 4 },
-        { day: "Sat", seeds: 3, droppings: 6, dust: 3 },
-        { day: "Sun", seeds: 4, droppings: 7, dust: 4 },
-      ],
-    },
+  useEffect(() => {
+    async function fetchDetectionData() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await detectionApi.getDetections(selectedSite);
+        setDetectionData(data);
+      } catch (err) {
+        console.error('Error fetching detection data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load detection data');
+        // Fallback to mock data on error
+        setDetectionData({
+          activeAlerts: 3,
+          resolvedToday: 3,
+          cameras: 16,
+          accuracy: "98.5%",
+          detections: [],
+          weeklyData: [
+            { day: "Mon", seeds: 3, droppings: 5, dust: 2 },
+            { day: "Tue", seeds: 2, droppings: 4, dust: 1 },
+            { day: "Wed", seeds: 4, droppings: 6, dust: 3 },
+            { day: "Thu", seeds: 2, droppings: 3, dust: 2 },
+            { day: "Fri", seeds: 3, droppings: 7, dust: 2 },
+            { day: "Sat", seeds: 1, droppings: 4, dust: 1 },
+            { day: "Sun", seeds: 2, droppings: 5, dust: 2 },
+          ],
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDetectionData();
+  }, [selectedSite]);
+
+  const currentData = detectionData || {
+    activeAlerts: 0,
+    resolvedToday: 0,
+    cameras: 0,
+    accuracy: "0%",
+    detections: [],
+    weeklyData: [],
   };
 
-  const currentData = siteDetectionData[selectedSite];
-
-  const detections = [
-    { id: 1, type: "Bird Droppings", location: "Barn 2 - Section A", severity: "medium", timestamp: "2026-03-29 08:15", status: "active" },
-    { id: 2, type: "Seeds", location: "Barn 3 - Section C", severity: "low", timestamp: "2026-03-29 07:42", status: "active" },
-    { id: 3, type: "Bird Droppings", location: "Barn 1 - Section B", severity: "high", timestamp: "2026-03-29 06:30", status: "active" },
-    { id: 4, type: "Dust Accumulation", location: "Barn 4 - Section A", severity: "low", timestamp: "2026-03-28 22:15", status: "resolved" },
-    { id: 5, type: "Seeds", location: "Barn 2 - Section D", severity: "low", timestamp: "2026-03-28 18:45", status: "resolved" },
-    { id: 6, type: "Bird Droppings", location: "Barn 3 - Section B", severity: "medium", timestamp: "2026-03-28 14:20", status: "resolved" },
-  ];
+  const detections = currentData.detections || [];
 
   const severityConfig: Record<string, { bg: string; text: string; label: string }> = {
     high:   { bg: "bg-red-100",    text: "text-red-700",    label: "High" },

@@ -104,10 +104,10 @@ export const structuralApi = {
     return fetchApi(`/structural/${encodeURIComponent(site)}`);
   },
 
-  async updateBeamStatus(beamId: string, status: 'good' | 'warning' | 'critical'): Promise<void> {
+  async updateBeamStatus(beamId: string, siteId: string, status: 'good' | 'warning' | 'critical'): Promise<void> {
     return fetchApi(`/structural/beams/${beamId}`, {
       method: 'PUT',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, siteId }),
     });
   },
 };
@@ -125,9 +125,10 @@ export const detectionApi = {
     return fetchApi(`/detections/${encodeURIComponent(site)}`);
   },
 
-  async resolveDetection(detectionId: number): Promise<void> {
+  async resolveDetection(detectionId: string, siteId: string): Promise<void> {
     return fetchApi(`/detections/${detectionId}/resolve`, {
       method: 'POST',
+      body: JSON.stringify({ siteId }),
     });
   },
 };
@@ -145,10 +146,10 @@ export const inventoryApi = {
     return fetchApi(`/inventory/${encodeURIComponent(site)}`);
   },
 
-  async updateBarnInventory(barnId: number, amount: number): Promise<void> {
+  async updateBarnInventory(barnId: string, siteId: string, amount: number): Promise<void> {
     return fetchApi(`/inventory/barns/${barnId}`, {
       method: 'PUT',
-      body: JSON.stringify({ amount }),
+      body: JSON.stringify({ amount, siteId }),
     });
   },
 };
