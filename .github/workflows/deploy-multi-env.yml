@@ -1,0 +1,60 @@
+name: Deploy to Multiple Environments
+
+on:
+  push:
+    branches:
+      - develop      # Deploy to dev
+      - staging      # Deploy to staging
+      - main         # Deploy to production
+    paths:
+      - 'back-end/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "env=production" >> $GITHUB_OUTPUT
+            echo "stack=ImiiDomesBackendStack-Prod" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/staging" ]; then
+            echo "env=staging" >> $GITHUB_OUTPUT
+            echo "stack=ImiiDomesBackendStack-Staging" >> $GITHUB_OUTPUT
+          else
+            echo "env=development" >> $GITHUB_OUTPUT
+            echo "stack=ImiiDomesBackendStack-Dev" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Install dependencies
+        working-directory: back-end
+        run: |
+          npm ci
+          cd lambda/layers/common/nodejs && npm ci
+      
+      - name: Deploy to ${{ steps.env.outputs.env }}
+        working-directory: back-end
+        run: |
+          npx cdk deploy ${{ steps.env.outputs.stack }} \
+            --require-approval never \
+            --context environment=${{ steps.env.outputs.env }}
+      
+      - name: Output deployment info
+        run: |
+          echo "🚀 Deployed to ${{ steps.env.outputs.env }}!"
+          echo "Stack: ${{ steps.env.outputs.stack }}"
