@@ -45,7 +45,7 @@ jobs:
         working-directory: back-end
         run: |
           npm ci
-          cd lambda/layers/common/nodejs && npm ci
+          cd lambda/layers/common/nodejs && npm install
       
       - name: Deploy to ${{ steps.env.outputs.env }}
         working-directory: back-end

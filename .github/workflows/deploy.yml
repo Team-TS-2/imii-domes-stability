@@ -46,7 +46,7 @@ jobs:
       - name: Install Lambda layer dependencies
         run: |
           cd lambda/layers/common/nodejs
-          npm ci
+          npm install
           cd ../../../..
       
       # 5. Configure AWS credentials
