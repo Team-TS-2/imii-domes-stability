@@ -18,7 +18,7 @@ jobs:
       
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
       
       - name: Determine environment
         id: env
@@ -46,6 +46,10 @@ jobs:
         run: |
           npm ci
           cd lambda/layers/common/nodejs && npm install
+      
+      - name: Verify CDK CLI version
+        working-directory: back-end
+        run: npx cdk --version
       
       - name: Deploy to ${{ steps.env.outputs.env }}
         working-directory: back-end
