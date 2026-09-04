@@ -12,8 +12,8 @@ exports.handler = async (event) => {
 
   try {
     // GET /api/detections/{site} - Get detection data for a site
-    if (pathParameters.site && httpMethod === 'GET') {
-      const site = decodeURIComponent(pathParameters.site);
+    if (pathParameters.detectionId && httpMethod === 'GET') {
+      const site = decodeURIComponent(pathParameters.detectionId);
 
       // Get all detections for the site
       const detectionsResult = await docClient.send(

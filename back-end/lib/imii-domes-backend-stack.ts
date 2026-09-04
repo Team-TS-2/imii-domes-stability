@@ -252,10 +252,8 @@ export class ImiiDomesBackendStack extends cdk.Stack {
 
     // Detection endpoints
     const detectionsResource = apiResource.addResource('detections');
-    const detectionsSiteResource = detectionsResource.addResource('{site}');
-    detectionsSiteResource.addMethod('GET', new apigateway.LambdaIntegration(detectionFunction));
-
     const detectionResource = detectionsResource.addResource('{detectionId}');
+    detectionResource.addMethod('GET', new apigateway.LambdaIntegration(detectionFunction));
     const resolveResource = detectionResource.addResource('resolve');
     resolveResource.addMethod('POST', new apigateway.LambdaIntegration(detectionFunction));
 
