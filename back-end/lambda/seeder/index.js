@@ -235,29 +235,47 @@ exports.handler = async (event) => {
     }
 
     // Seed Time Series Data (last 7 days)
+   // Seed Time Series Data (expanded to 2 years for creep simulation)
     const now = Date.now();
     const oneDayMs = 24 * 60 * 60 * 1000;
+    const totalDays = 730;
 
     for (const site of sites) {
       // Seed stress time series
-      for (let i = 6; i >= 0; i--) {
+      let damageOffset = 0; // Tracks cumulative sudden drops per site
+
+      for (let i = totalDays; i >= 0; i--) {
         const timestamp = now - i * oneDayMs;
+        const t = totalDays - i + 1; // Elapsed days for the creep function
+
+        // Simulate sudden capacity drops (e.g., connection slip)
+        if (Math.random() > 0.99) {
+          damageOffset += (Math.random() * 2); 
+        }
+
+        // Viscoelastic creep model + seasonal variance + noise
+        const baseLoad = 45.0;
+        const creep = 1.5 * Math.pow(t, 0.25);
+        const seasonal = 2.0 * Math.sin((2 * Math.PI / 365) * t);
+        const noise = (Math.random() - 0.5) * 0.8;
+        const simulatedStress = baseLoad + creep + seasonal + noise + damageOffset;
+
         await docClient.send(
           new PutCommand({
             TableName: TIMESERIES_TABLE,
             Item: {
               metricKey: `${site}#stress`,
               timestamp,
-              beam1: 60 + Math.random() * 12,
-              beam2: 65 + Math.random() * 8,
-              average: 45 + Math.random() * 5,
+              // Apply base model to average, offset slightly for individual beams to fit current schema
+              average: parseFloat(simulatedStress.toFixed(2)),
+              beam1: parseFloat((simulatedStress + 2.1).toFixed(2)),
+              beam2: parseFloat((simulatedStress - 1.4).toFixed(2)),
               ttl: Math.floor((now + 90 * oneDayMs) / 1000),
             },
           })
         );
         seedCount++;
       }
-
       // Seed detection time series
       for (let i = 6; i >= 0; i--) {
         const timestamp = now - i * oneDayMs;
