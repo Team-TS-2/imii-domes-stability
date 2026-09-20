@@ -315,7 +315,7 @@ export function StructuralMonitoring() {
             <div>
               <h3 className="text-zinc-800">Stress Level Trends</h3>
               <p className="text-zinc-400 mt-0.5" style={{ fontSize: "0.82rem" }}>
-                7-day historical · glue laminated beam readings
+                2-year historical · glue laminated beam readings
                 {showForecast && ` + ${forecastDays}-day AI forecast`}
               </p>
             </div>
