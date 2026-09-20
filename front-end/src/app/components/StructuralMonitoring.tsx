@@ -5,7 +5,7 @@ import {
 } from "recharts";
 import { useSite } from "../context/SiteContext";
 import { useState, useMemo } from "react";
-
+import telemetryData from '/src/telemetry.json'
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 function linearRegression(values: (number | null)[]): { slope: number; intercept: number } {
@@ -280,9 +280,10 @@ export function StructuralMonitoring() {
   ];
 
   // ── chart data depending on forecast toggle ───────────────────────────────
-  const chartData = showForecast ? forecast.combinedData : stressData.map(d => ({
-    ...d, beam1Pred: null, beam2Pred: null, avgPred: null,
-  }));
+  //const chartData = showForecast ? forecast.combinedData : stressData.map(d => ({
+  //  ...d, beam1Pred: null, beam2Pred: null, avgPred: null,
+  //}));
+  const chartData = telemetryData;
 
   const xTickInterval = forecastDays === 30 ? 4 : forecastDays === 14 ? 2 : 0;
 
@@ -373,7 +374,8 @@ export function StructuralMonitoring() {
                 tick={{ fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
-                interval={showForecast ? xTickInterval : 0}
+                minTickGap={60} // Crucial for 730 data points
+                tickFormatter={(tick) => new Date(tick).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}
               />
               <YAxis
                 stroke="#a1a1aa"
