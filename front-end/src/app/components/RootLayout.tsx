@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from "react-router";
-import { Building2, AlertTriangle, Package, LayoutDashboard, ChevronDown, MapPin } from "lucide-react";
+import { Building2, AlertTriangle, LayoutDashboard, ChevronDown, MapPin } from "lucide-react";
 import { useState } from "react";
 import logo from "figma:asset/d2c40cb1bbe2ef97d769ae605a9e404ceb22c489.png";
 import { useSite } from "../context/SiteContext";
@@ -109,19 +109,6 @@ export function RootLayout() {
             >
               <AlertTriangle className="w-3.5 h-3.5" />
               Foreign Material Detection
-            </NavLink>
-            <NavLink
-              to="/inventory"
-              className={({ isActive }) =>
-                `flex items-center gap-1.5 px-4 py-2.5 text-sm transition-all rounded-t-md border-b-2 ${
-                  isActive
-                    ? "bg-white/15 text-white border-white"
-                    : "text-white/70 hover:bg-white/10 hover:text-white border-transparent"
-                }`
-              }
-            >
-              <Package className="w-3.5 h-3.5" />
-              Inventory Monitoring
             </NavLink>
           </nav>
         </div>

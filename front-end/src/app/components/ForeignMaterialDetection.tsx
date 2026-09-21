@@ -3,386 +3,458 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { useSite } from "../context/SiteContext";
 import { useState } from "react";
 
-const detectionImages: Record<number, { url: string; caption: string; camId: string; detectionBox?: { top: string; left: string; width: string; height: string } }> = {
-  1: {
-    url: "https://images.unsplash.com/photo-1481597262637-0545b18186ea?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbmR1c3RyaWFsJTIwd2FyZWhvdXNlJTIwc2VjdXJpdHklMjBjYW1lcmElMjBzdXJ2ZWlsbGFuY2UlMjBpbmZyYXJlZCUyMHZpZXd8ZW58MXx8fHwxNzc0ODIxMTk5fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    caption: "CAM-2A  |  BARN 2 / SEC-A  |  2026-03-29  08:15:42",
-    camId: "CAM-2A",
-    detectionBox: { top: "28%", left: "38%", width: "24%", height: "22%" },
+// Two naturally pinkish-red potash conveyor backgrounds
+const POTASH_A = "https://images.unsplash.com/photo-1757030625779-e1033c11057b?w=800&q=80";
+const POTASH_B = "https://images.unsplash.com/photo-1757030625811-7347b2eeb8ef?w=800&q=80";
+
+interface TypeMeta {
+  potashBg: string;
+  contaminantUrl: string;
+  contaminantBlend: "multiply" | "screen" | "overlay";
+  contaminantPlacement: { top: string; left: string; width: string; height: string };
+  detectionBox: { top: string; left: string; width: string; height: string };
+}
+
+// Each contaminant composited over potash via CSS blend modes:
+//   multiply -> removes white photo bg, dark object remains on potash
+//   screen   -> removes dark photo bg, bright highlights appear on potash
+const TYPE_META: Record<string, TypeMeta> = {
+  "Rubber Glove": {
+    potashBg: POTASH_A,
+    contaminantUrl: "https://images.unsplash.com/photo-1611075384665-b657035a7022?w=600&q=80",
+    contaminantBlend: "multiply",
+    contaminantPlacement: { top: "8%", left: "12%", width: "76%", height: "80%" },
+    detectionBox: { top: "6%", left: "10%", width: "80%", height: "84%" },
   },
-  2: {
-    url: "https://images.unsplash.com/photo-1576469196969-7bcc7d58cbe6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmFpbiUyMHN0b3JhZ2UlMjBiYXJuJTIwaW50ZXJpb3IlMjBvdmVyaGVhZCUyMGNvbnZleW9yJTIwYmVsdCUyMGxvYWRpbmd8ZW58MXx8fHwxNzc0ODIxMTk0fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    caption: "CAM-3C  |  BARN 3 / SEC-C  |  2026-03-29  07:42:11",
-    camId: "CAM-3C",
-    detectionBox: { top: "40%", left: "20%", width: "20%", height: "18%" },
+  "Belt Fragment": {
+    potashBg: POTASH_B,
+    contaminantUrl: "https://images.unsplash.com/photo-1608920765563-4893273bc9fa?w=600&q=80",
+    contaminantBlend: "multiply",
+    contaminantPlacement: { top: "22%", left: "4%", width: "92%", height: "54%" },
+    detectionBox: { top: "20%", left: "2%", width: "96%", height: "58%" },
   },
-  3: {
-    url: "https://images.unsplash.com/photo-1752249764088-8fce47082092?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaW5pbmclMjBtaW5lcmFsJTIwc3RvcmFnZSUyMGRvbWUlMjBpbnRlcmlvciUyMGJ1bGslMjBtYXRlcmlhbCUyMGNvbnZleW9yfGVufDF8fHx8MTc3NDgyMTIwM3ww&ixlib=rb-4.1.0&q=80&w=1080",
-    caption: "CAM-1B  |  BARN 1 / SEC-B  |  2026-03-29  06:30:05",
-    camId: "CAM-1B",
-    detectionBox: { top: "22%", left: "55%", width: "22%", height: "26%" },
+  "Earring": {
+    potashBg: POTASH_A,
+    contaminantUrl: "https://images.unsplash.com/photo-1702476320482-0736c4b962f5?w=600&q=80",
+    contaminantBlend: "multiply",
+    contaminantPlacement: { top: "6%", left: "28%", width: "44%", height: "84%" },
+    detectionBox: { top: "4%", left: "26%", width: "48%", height: "88%" },
   },
-  4: {
-    url: "https://images.unsplash.com/photo-1759085795607-d4da92f5c18e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmZXJ0aWxpemVyJTIwZ3JhbnVsZXMlMjBtaW5lcmFsJTIwYWdncmVnYXRlJTIwcGlsZSUyMHN0b2NrcGlsZSUyMHRvcCUyMHZpZXd8ZW58MXx8fHwxNzc0ODIxMjAzfDA&ixlib=rb-4.1.0&q=80&w=1080",
-    caption: "CAM-4A  |  BARN 4 / SEC-A  |  2026-03-28  22:15:30",
-    camId: "CAM-4A",
-    detectionBox: { top: "33%", left: "60%", width: "18%", height: "20%" },
+  "Metal Ring": {
+    potashBg: POTASH_A,
+    contaminantUrl: "https://images.unsplash.com/photo-1687858477667-d5dc55100409?w=600&q=80",
+    contaminantBlend: "multiply",
+    contaminantPlacement: { top: "10%", left: "24%", width: "52%", height: "78%" },
+    detectionBox: { top: "8%", left: "22%", width: "56%", height: "82%" },
   },
-  5: {
-    url: "https://images.unsplash.com/photo-1758304481895-2e3cb9b7673e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidWxrJTIwbWF0ZXJpYWwlMjBzYWx0JTIwbWluZXJhbCUyMGluZG9vciUyMHN0b3JhZ2UlMjBwaWxlJTIwd2FyZWhvdXNlJTIwYWVyaWFsfGVufDF8fHx8MTc3NDgyMTE5NXww&ixlib=rb-4.1.0&q=80&w=1080",
-    caption: "CAM-2D  |  BARN 2 / SEC-D  |  2026-03-28  18:45:17",
-    camId: "CAM-2D",
-    detectionBox: { top: "45%", left: "30%", width: "22%", height: "19%" },
+  "Seeds": {
+    potashBg: POTASH_B,
+    contaminantUrl: "https://images.unsplash.com/photo-1762710597245-3557d83b2b39?w=600&q=80",
+    contaminantBlend: "screen",
+    contaminantPlacement: { top: "14%", left: "4%", width: "92%", height: "70%" },
+    detectionBox: { top: "12%", left: "2%", width: "96%", height: "74%" },
   },
-  6: {
-    url: "https://images.unsplash.com/photo-1718066236081-b36f8a1e52bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmFpbiUyMHNpbG8lMjBjb252ZXlvciUyMGNodXRlJTIwbG9hZGluZyUyMG92ZXJoZWFkJTIwaW5zaWRlJTIwZmFjaWxpdHl8ZW58MXx8fHwxNzc0ODIxMjAwfDA&ixlib=rb-4.1.0&q=80&w=1080",
-    caption: "CAM-3B  |  BARN 3 / SEC-B  |  2026-03-28  14:20:58",
-    camId: "CAM-3B",
-    detectionBox: { top: "30%", left: "42%", width: "20%", height: "24%" },
+  "Bird Droppings": {
+    potashBg: POTASH_B,
+    contaminantUrl: "https://images.unsplash.com/photo-1768144931674-d5f5dad44f2a?w=600&q=80",
+    contaminantBlend: "screen",
+    contaminantPlacement: { top: "16%", left: "6%", width: "88%", height: "66%" },
+    detectionBox: { top: "14%", left: "4%", width: "92%", height: "70%" },
   },
 };
 
+interface Detection {
+  id: string;
+  type: string;
+  severity: "High" | "Medium" | "Low";
+  camera: string;
+  location: string;
+  timestamp: string;
+  status: "Active" | "Resolved";
+}
+
+const SITE_DETECTIONS: Record<string, Detection[]> = {
+  "Nutrien Allan": [
+    { id: "FMD-001", type: "Rubber Glove",   severity: "High",   camera: "CAM-B3-01", location: "Barn 3 – Belt Section 2",   timestamp: "09:14 AM", status: "Active" },
+    { id: "FMD-002", type: "Belt Fragment",   severity: "Medium", camera: "CAM-B1-03", location: "Barn 1 – Entry Conveyor",    timestamp: "08:52 AM", status: "Active" },
+    { id: "FMD-003", type: "Earring",         severity: "High",   camera: "CAM-B2-02", location: "Barn 2 – Discharge Section", timestamp: "07:30 AM", status: "Resolved" },
+    { id: "FMD-004", type: "Metal Ring",      severity: "Medium", camera: "CAM-B4-01", location: "Barn 4 – Loading Belt",      timestamp: "06:45 AM", status: "Resolved" },
+    { id: "FMD-005", type: "Seeds",           severity: "Low",    camera: "CAM-B3-04", location: "Barn 3 – Transfer Point",    timestamp: "05:20 AM", status: "Resolved" },
+    { id: "FMD-006", type: "Bird Droppings",  severity: "Low",    camera: "CAM-B1-02", location: "Barn 1 – Overhead Section",  timestamp: "04:15 AM", status: "Resolved" },
+  ],
+  "Nutrien Lanigan": [
+    { id: "FMD-001", type: "Belt Fragment",   severity: "High",   camera: "CAM-A2-01", location: "Aisle 2 – Main Conveyor",   timestamp: "10:02 AM", status: "Active" },
+    { id: "FMD-002", type: "Metal Ring",      severity: "Medium", camera: "CAM-A1-02", location: "Aisle 1 – Reclaim Belt",    timestamp: "09:41 AM", status: "Active" },
+    { id: "FMD-003", type: "Rubber Glove",   severity: "Medium", camera: "CAM-A3-01", location: "Aisle 3 – Belt B",          timestamp: "08:10 AM", status: "Resolved" },
+    { id: "FMD-004", type: "Bird Droppings",  severity: "Low",    camera: "CAM-A2-03", location: "Aisle 2 – Roof Zone",       timestamp: "07:05 AM", status: "Resolved" },
+    { id: "FMD-005", type: "Seeds",           severity: "Low",    camera: "CAM-A4-01", location: "Aisle 4 – Feed Conveyor",   timestamp: "06:00 AM", status: "Resolved" },
+    { id: "FMD-006", type: "Earring",         severity: "High",   camera: "CAM-A1-04", location: "Aisle 1 – Discharge Zone",  timestamp: "04:50 AM", status: "Resolved" },
+  ],
+  "Nutrien Cory": [
+    { id: "FMD-001", type: "Earring",         severity: "High",   camera: "CAM-C1-02", location: "Cell 1 – Transfer Belt",    timestamp: "11:18 AM", status: "Active" },
+    { id: "FMD-002", type: "Rubber Glove",   severity: "High",   camera: "CAM-C3-01", location: "Cell 3 – Entry Point",      timestamp: "10:35 AM", status: "Active" },
+    { id: "FMD-003", type: "Bird Droppings",  severity: "Low",    camera: "CAM-C2-03", location: "Cell 2 – Overhead",         timestamp: "09:00 AM", status: "Active" },
+    { id: "FMD-004", type: "Belt Fragment",   severity: "Medium", camera: "CAM-C4-02", location: "Cell 4 – Return Belt",      timestamp: "08:22 AM", status: "Resolved" },
+    { id: "FMD-005", type: "Metal Ring",      severity: "Medium", camera: "CAM-C1-04", location: "Cell 1 – Loading Chute",    timestamp: "06:55 AM", status: "Resolved" },
+    { id: "FMD-006", type: "Seeds",           severity: "Low",    camera: "CAM-C3-03", location: "Cell 3 – Side Belt",        timestamp: "05:30 AM", status: "Resolved" },
+  ],
+  "Nutrien Rocanville": [
+    { id: "FMD-001", type: "Seeds",           severity: "Low",    camera: "CAM-R2-01", location: "Section 2 – Reclaim",       timestamp: "08:40 AM", status: "Active" },
+    { id: "FMD-002", type: "Belt Fragment",   severity: "Medium", camera: "CAM-R1-03", location: "Section 1 – Stacker Belt",  timestamp: "07:15 AM", status: "Resolved" },
+    { id: "FMD-003", type: "Rubber Glove",   severity: "High",   camera: "CAM-R3-02", location: "Section 3 – Main Belt",     timestamp: "06:30 AM", status: "Resolved" },
+    { id: "FMD-004", type: "Earring",         severity: "Medium", camera: "CAM-R2-04", location: "Section 2 – Discharge",     timestamp: "05:45 AM", status: "Resolved" },
+    { id: "FMD-005", type: "Bird Droppings",  severity: "Low",    camera: "CAM-R4-01", location: "Section 4 – Roof Zone",     timestamp: "04:20 AM", status: "Resolved" },
+    { id: "FMD-006", type: "Metal Ring",      severity: "Medium", camera: "CAM-R1-01", location: "Section 1 – Feed Belt",     timestamp: "03:10 AM", status: "Resolved" },
+  ],
+  "Mosaic Esterhazy": [
+    { id: "FMD-001", type: "Metal Ring",      severity: "High",   camera: "CAM-E3-02", location: "East Wing – Belt 3",        timestamp: "09:55 AM", status: "Active" },
+    { id: "FMD-002", type: "Bird Droppings",  severity: "Low",    camera: "CAM-E1-01", location: "East Wing – Overhead",      timestamp: "09:22 AM", status: "Active" },
+    { id: "FMD-003", type: "Seeds",           severity: "Low",    camera: "CAM-E2-03", location: "East Wing – Transfer Point",timestamp: "08:05 AM", status: "Active" },
+    { id: "FMD-004", type: "Rubber Glove",   severity: "High",   camera: "CAM-E4-01", location: "East Wing – Entry Belt",    timestamp: "07:40 AM", status: "Active" },
+    { id: "FMD-005", type: "Belt Fragment",   severity: "Medium", camera: "CAM-E3-04", location: "East Wing – Return Belt",   timestamp: "06:25 AM", status: "Resolved" },
+    { id: "FMD-006", type: "Earring",         severity: "High",   camera: "CAM-E2-02", location: "East Wing – Discharge Belt",timestamp: "05:00 AM", status: "Resolved" },
+  ],
+};
+
+const SITE_CHART_DATA: Record<string, { day: string; accessories: number; beltDebris: number; biological: number }[]> = {
+  "Nutrien Allan": [
+    { day: "Mon", accessories: 2, beltDebris: 1, biological: 1 },
+    { day: "Tue", accessories: 1, beltDebris: 2, biological: 0 },
+    { day: "Wed", accessories: 3, beltDebris: 1, biological: 2 },
+    { day: "Thu", accessories: 1, beltDebris: 0, biological: 1 },
+    { day: "Fri", accessories: 2, beltDebris: 2, biological: 1 },
+    { day: "Sat", accessories: 0, beltDebris: 1, biological: 0 },
+    { day: "Sun", accessories: 1, beltDebris: 0, biological: 1 },
+  ],
+  "Nutrien Lanigan": [
+    { day: "Mon", accessories: 1, beltDebris: 2, biological: 0 },
+    { day: "Tue", accessories: 2, beltDebris: 1, biological: 1 },
+    { day: "Wed", accessories: 0, beltDebris: 2, biological: 0 },
+    { day: "Thu", accessories: 1, beltDebris: 1, biological: 1 },
+    { day: "Fri", accessories: 2, beltDebris: 0, biological: 0 },
+    { day: "Sat", accessories: 1, beltDebris: 1, biological: 1 },
+    { day: "Sun", accessories: 0, beltDebris: 0, biological: 0 },
+  ],
+  "Nutrien Cory": [
+    { day: "Mon", accessories: 2, beltDebris: 1, biological: 2 },
+    { day: "Tue", accessories: 3, beltDebris: 2, biological: 1 },
+    { day: "Wed", accessories: 1, beltDebris: 1, biological: 1 },
+    { day: "Thu", accessories: 2, beltDebris: 0, biological: 2 },
+    { day: "Fri", accessories: 3, beltDebris: 1, biological: 1 },
+    { day: "Sat", accessories: 1, beltDebris: 2, biological: 0 },
+    { day: "Sun", accessories: 0, beltDebris: 1, biological: 1 },
+  ],
+  "Nutrien Rocanville": [
+    { day: "Mon", accessories: 1, beltDebris: 1, biological: 0 },
+    { day: "Tue", accessories: 0, beltDebris: 1, biological: 1 },
+    { day: "Wed", accessories: 1, beltDebris: 0, biological: 0 },
+    { day: "Thu", accessories: 0, beltDebris: 1, biological: 1 },
+    { day: "Fri", accessories: 1, beltDebris: 0, biological: 0 },
+    { day: "Sat", accessories: 0, beltDebris: 0, biological: 1 },
+    { day: "Sun", accessories: 0, beltDebris: 1, biological: 0 },
+  ],
+  "Mosaic Esterhazy": [
+    { day: "Mon", accessories: 3, beltDebris: 2, biological: 2 },
+    { day: "Tue", accessories: 2, beltDebris: 1, biological: 1 },
+    { day: "Wed", accessories: 3, beltDebris: 2, biological: 2 },
+    { day: "Thu", accessories: 2, beltDebris: 2, biological: 1 },
+    { day: "Fri", accessories: 4, beltDebris: 1, biological: 2 },
+    { day: "Sat", accessories: 1, beltDebris: 1, biological: 1 },
+    { day: "Sun", accessories: 2, beltDebris: 0, biological: 1 },
+  ],
+};
+
+const SITE_STATS: Record<string, { total: number; active: number; resolved: number; rate: string }> = {
+  "Nutrien Allan":      { total: 6, active: 2, resolved: 4, rate: "94%" },
+  "Nutrien Lanigan":    { total: 6, active: 2, resolved: 4, rate: "97%" },
+  "Nutrien Cory":       { total: 6, active: 3, resolved: 3, rate: "91%" },
+  "Nutrien Rocanville": { total: 6, active: 1, resolved: 5, rate: "96%" },
+  "Mosaic Esterhazy":   { total: 6, active: 4, resolved: 2, rate: "89%" },
+};
+
+const SEV_CLS: Record<string, string> = {
+  High:   "text-red-600 bg-red-50 border-red-200",
+  Medium: "text-amber-600 bg-amber-50 border-amber-200",
+  Low:    "text-emerald-600 bg-emerald-50 border-emerald-200",
+};
+
+function sevColors(severity: string) {
+  if (severity === "High")   return { box: "#ef4444", glow: "rgba(239,68,68,0.35)" };
+  if (severity === "Medium") return { box: "#f59e0b", glow: "rgba(245,158,11,0.35)" };
+  return { box: "#10b981", glow: "rgba(16,185,129,0.35)" };
+}
+
+// ── CCTV viewport: potash background + contaminant composited via blend modes ──
+function CctvViewport({
+  meta, boxColor, boxGlow, label, caption, height,
+}: {
+  meta: TypeMeta;
+  boxColor: string;
+  boxGlow: string;
+  label: string;
+  caption: string;
+  height?: string;
+}) {
+  const corners = [
+    "top-2 left-2 border-t border-l",
+    "top-2 right-2 border-t border-r",
+    "bottom-2 left-2 border-b border-l",
+    "bottom-2 right-2 border-b border-r",
+  ] as const;
+
+  return (
+    <div
+      className="relative rounded-lg overflow-hidden"
+      style={{ height: height ?? "220px", background: "#040404" }}
+    >
+      {/* Both images share one filter div so CCTV processing is uniform */}
+      <div
+        className="absolute inset-0 overflow-hidden"
+        style={{ filter: "saturate(0.42) contrast(1.32) brightness(0.76)" }}
+      >
+        <img src={meta.potashBg} className="absolute inset-0 w-full h-full object-cover" alt="" />
+        <img
+          src={meta.contaminantUrl}
+          alt=""
+          style={{
+            position: "absolute",
+            top: meta.contaminantPlacement.top,
+            left: meta.contaminantPlacement.left,
+            width: meta.contaminantPlacement.width,
+            height: meta.contaminantPlacement.height,
+            objectFit: "contain",
+            mixBlendMode: meta.contaminantBlend,
+            opacity: 0.78,
+          }}
+        />
+      </div>
+
+      {/* Green phosphor overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: "rgba(18,55,18,0.20)", mixBlendMode: "screen" }}
+      />
+
+      {/* Scan lines */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px)",
+        }}
+      />
+
+      {/* Vignette */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.6) 100%)" }}
+      />
+
+      {/* Corner brackets */}
+      {corners.map((cls, i) => (
+        <div key={i} className={`absolute w-4 h-4 ${cls} border-green-400/60`} style={{ borderWidth: "1.5px" }} />
+      ))}
+
+      {/* Bounding box */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          top: meta.detectionBox.top,
+          left: meta.detectionBox.left,
+          width: meta.detectionBox.width,
+          height: meta.detectionBox.height,
+          border: `1.5px solid ${boxColor}`,
+          boxShadow: `0 0 8px ${boxGlow}, inset 0 0 8px ${boxGlow}`,
+        }}
+      >
+        <span
+          className="absolute -top-5 left-0 px-1 py-0.5 text-white font-mono"
+          style={{ fontSize: "0.6rem", background: boxColor, letterSpacing: "0.05em" }}
+        >
+          {label}
+        </span>
+      </div>
+
+      {/* REC badge */}
+      <div className="absolute top-2.5 right-9 flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+        <span className="text-red-400 font-mono" style={{ fontSize: "0.58rem" }}>REC</span>
+      </div>
+
+      {/* HUD bar */}
+      <div
+        className="absolute bottom-0 left-0 right-0 px-2.5 py-1.5 font-mono"
+        style={{ background: "rgba(0,0,0,0.55)", fontSize: "0.58rem", color: "rgba(180,220,180,0.85)" }}
+      >
+        <div className="flex justify-between items-center">
+          <span>{caption}</span>
+          <span className="opacity-60">CONF: 94%</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ───────────────────────────────────────────────────────────────────
 export function ForeignMaterialDetection() {
   const { selectedSite } = useSite();
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [lightboxId, setLightboxId] = useState<number | null>(null);
+  const detections = SITE_DETECTIONS[selectedSite];
+  const chartData = SITE_CHART_DATA[selectedSite];
+  const siteStats = SITE_STATS[selectedSite];
 
-  const siteDetectionData: Record<string, any> = {
-    "Nutrien Allan": {
-      activeAlerts: 3,
-      resolvedToday: 3,
-      cameras: 16,
-      accuracy: "98.5%",
-      weeklyData: [
-        { day: "Mon", seeds: 3, droppings: 5, dust: 2 },
-        { day: "Tue", seeds: 2, droppings: 4, dust: 1 },
-        { day: "Wed", seeds: 4, droppings: 6, dust: 3 },
-        { day: "Thu", seeds: 2, droppings: 3, dust: 2 },
-        { day: "Fri", seeds: 3, droppings: 7, dust: 2 },
-        { day: "Sat", seeds: 1, droppings: 4, dust: 1 },
-        { day: "Sun", seeds: 2, droppings: 5, dust: 2 },
-      ],
-    },
-    "Nutrien Lanigan": {
-      activeAlerts: 2,
-      resolvedToday: 4,
-      cameras: 20,
-      accuracy: "99.1%",
-      weeklyData: [
-        { day: "Mon", seeds: 2, droppings: 4, dust: 1 },
-        { day: "Tue", seeds: 1, droppings: 3, dust: 1 },
-        { day: "Wed", seeds: 3, droppings: 5, dust: 2 },
-        { day: "Thu", seeds: 1, droppings: 2, dust: 1 },
-        { day: "Fri", seeds: 2, droppings: 6, dust: 1 },
-        { day: "Sat", seeds: 1, droppings: 3, dust: 0 },
-        { day: "Sun", seeds: 1, droppings: 4, dust: 1 },
-      ],
-    },
-    "Nutrien Cory": {
-      activeAlerts: 4,
-      resolvedToday: 2,
-      cameras: 18,
-      accuracy: "97.8%",
-      weeklyData: [
-        { day: "Mon", seeds: 4, droppings: 6, dust: 3 },
-        { day: "Tue", seeds: 3, droppings: 5, dust: 2 },
-        { day: "Wed", seeds: 5, droppings: 7, dust: 4 },
-        { day: "Thu", seeds: 3, droppings: 4, dust: 3 },
-        { day: "Fri", seeds: 4, droppings: 8, dust: 3 },
-        { day: "Sat", seeds: 2, droppings: 5, dust: 2 },
-        { day: "Sun", seeds: 3, droppings: 6, dust: 3 },
-      ],
-    },
-    "Nutrien Rocanville": {
-      activeAlerts: 1,
-      resolvedToday: 5,
-      cameras: 16,
-      accuracy: "99.3%",
-      weeklyData: [
-        { day: "Mon", seeds: 1, droppings: 3, dust: 1 },
-        { day: "Tue", seeds: 1, droppings: 2, dust: 0 },
-        { day: "Wed", seeds: 2, droppings: 4, dust: 1 },
-        { day: "Thu", seeds: 1, droppings: 2, dust: 1 },
-        { day: "Fri", seeds: 2, droppings: 5, dust: 1 },
-        { day: "Sat", seeds: 0, droppings: 2, dust: 0 },
-        { day: "Sun", seeds: 1, droppings: 3, dust: 1 },
-      ],
-    },
-    "Mosaic Esterhazy": {
-      activeAlerts: 5,
-      resolvedToday: 1,
-      cameras: 22,
-      accuracy: "98.2%",
-      weeklyData: [
-        { day: "Mon", seeds: 5, droppings: 7, dust: 4 },
-        { day: "Tue", seeds: 4, droppings: 6, dust: 3 },
-        { day: "Wed", seeds: 6, droppings: 8, dust: 5 },
-        { day: "Thu", seeds: 4, droppings: 5, dust: 4 },
-        { day: "Fri", seeds: 5, droppings: 9, dust: 4 },
-        { day: "Sat", seeds: 3, droppings: 6, dust: 3 },
-        { day: "Sun", seeds: 4, droppings: 7, dust: 4 },
-      ],
-    },
-  };
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [modalDetection, setModalDetection] = useState<Detection | null>(null);
 
-  const currentData = siteDetectionData[selectedSite];
-
-  const detections = [
-    { id: 1, type: "Bird Droppings", location: "Barn 2 - Section A", severity: "medium", timestamp: "2026-03-29 08:15", status: "active" },
-    { id: 2, type: "Seeds", location: "Barn 3 - Section C", severity: "low", timestamp: "2026-03-29 07:42", status: "active" },
-    { id: 3, type: "Bird Droppings", location: "Barn 1 - Section B", severity: "high", timestamp: "2026-03-29 06:30", status: "active" },
-    { id: 4, type: "Dust Accumulation", location: "Barn 4 - Section A", severity: "low", timestamp: "2026-03-28 22:15", status: "resolved" },
-    { id: 5, type: "Seeds", location: "Barn 2 - Section D", severity: "low", timestamp: "2026-03-28 18:45", status: "resolved" },
-    { id: 6, type: "Bird Droppings", location: "Barn 3 - Section B", severity: "medium", timestamp: "2026-03-28 14:20", status: "resolved" },
-  ];
-
-  const severityConfig: Record<string, { bg: string; text: string; label: string }> = {
-    high:   { bg: "bg-red-100",    text: "text-red-700",    label: "High" },
-    medium: { bg: "bg-amber-100",  text: "text-amber-700",  label: "Medium" },
-    low:    { bg: "bg-blue-100",   text: "text-blue-700",   label: "Low" },
-  };
-
-  const statCards = [
-    { label: "Active Alerts",    value: currentData.activeAlerts, sub: "Require attention",    valueClass: "text-amber-600" },
-    { label: "Resolved Today",   value: currentData.resolvedToday, sub: "Cleaned and verified", valueClass: "text-emerald-600" },
-    { label: "Cameras Active",   value: currentData.cameras,       sub: "All operational",      valueClass: "text-blue-600" },
-    { label: "Detection Rate",   value: currentData.accuracy,      sub: "Accuracy this week",   valueClass: "text-zinc-900" },
-  ];
+  const activeCount = detections.filter((d) => d.status === "Active").length;
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {statCards.map((card) => (
-          <div
-            key={card.label}
-            className="bg-white rounded-xl p-5 border border-zinc-100 shadow-sm hover:shadow-md transition-shadow"
-          >
-            <p className="text-zinc-500 mb-1" style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>
-              {card.label}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-zinc-900">Foreign Material Detection</h2>
+          <p className="text-zinc-500" style={{ fontSize: "0.85rem" }}>
+            {selectedSite} · Conveyor Camera Network
+          </p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200">
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+          <span className="text-amber-700" style={{ fontSize: "0.78rem", fontWeight: 600 }}>
+            {activeCount} Active Alert{activeCount !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "Total Detections", value: siteStats.total,    color: "text-zinc-900" },
+          { label: "Active",           value: siteStats.active,   color: "text-red-600" },
+          { label: "Resolved",         value: siteStats.resolved, color: "text-emerald-600" },
+          { label: "Detection Rate",   value: siteStats.rate,     color: "text-blue-600" },
+        ].map((s) => (
+          <div key={s.label} className="bg-white rounded-xl border border-zinc-100 shadow-sm p-4">
+            <p
+              className="text-zinc-400 mb-1"
+              style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}
+            >
+              {s.label}
             </p>
-            <p className={`mb-1 ${card.valueClass}`} style={{ fontSize: "1.8rem", fontWeight: 700, lineHeight: 1.2 }}>
-              {card.value}
+            <p className={`font-bold ${s.color}`} style={{ fontSize: "1.6rem", lineHeight: 1.1 }}>
+              {s.value}
             </p>
-            <p className="text-zinc-400" style={{ fontSize: "0.8rem" }}>{card.sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Weekly Chart */}
-      <div className="bg-white rounded-xl p-6 border border-zinc-100 shadow-sm">
-        <h3 className="text-zinc-800 mb-1">Weekly Detection Trends</h3>
-        <p className="text-zinc-400 mb-5" style={{ fontSize: "0.82rem" }}>Foreign material detections over the past 7 days</p>
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={currentData.weeklyData} barGap={4}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f1f5" vertical={false} />
-            <XAxis dataKey="day" stroke="#a1a1aa" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-            <YAxis stroke="#a1a1aa" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} label={{ value: "Detections", angle: -90, position: "insideLeft", fontSize: 11, fill: "#a1a1aa" }} />
+      {/* Weekly chart — moved above log for at-a-glance context.
+          key={selectedSite} forces full Recharts remount on site switch. */}
+      <div className="bg-white rounded-xl border border-zinc-100 shadow-sm p-6">
+        <h3 className="text-zinc-800 font-semibold mb-4">Weekly Detection Breakdown</h3>
+        <ResponsiveContainer key={selectedSite} width="100%" height={220}>
+          <BarChart data={chartData} margin={{ top: 4, right: 16, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <XAxis dataKey="day" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
             <Tooltip
-              contentStyle={{ borderRadius: 8, border: "1px solid #e4e4e7", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
+              contentStyle={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "0.8rem" }}
               cursor={{ fill: "rgba(0,0,0,0.04)" }}
             />
-            <Legend wrapperStyle={{ fontSize: "0.82rem", paddingTop: "12px" }} />
-            <Bar key="bar-seeds" dataKey="seeds" fill="#22c55e" name="Seeds" radius={[3, 3, 0, 0]} />
-            <Bar key="bar-droppings" dataKey="droppings" fill="#f59e0b" name="Bird Droppings" radius={[3, 3, 0, 0]} />
-            <Bar key="bar-dust" dataKey="dust" fill="#6366f1" name="Dust" radius={[3, 3, 0, 0]} />
+            <Legend wrapperStyle={{ fontSize: "0.78rem" }} />
+            <Bar dataKey="accessories" name="Operator Accessories" fill="#a78bfa" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="beltDebris"  name="Belt Debris"          fill="#64748b" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="biological"  name="Biological"           fill="#34d399" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Recent Detections */}
-      <div className="bg-white rounded-xl p-6 border border-zinc-100 shadow-sm">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h3 className="text-zinc-800 mb-0.5">Recent Detections</h3>
-            <p className="text-zinc-400" style={{ fontSize: "0.82rem" }}>Click any detection to view the associated camera image</p>
-          </div>
-          <span className="px-3 py-1 rounded-full bg-zinc-100 text-zinc-600" style={{ fontSize: "0.78rem", fontWeight: 600 }}>
-            {detections.length} events
-          </span>
+      {/* Detection log */}
+      <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-zinc-100 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-500" />
+          <h3 className="text-zinc-800 font-semibold">Detection Log</h3>
         </div>
-
-        <div className="space-y-3">
-          {detections.map((detection) => {
-            const isExpanded = expandedId === detection.id;
-            const sev = severityConfig[detection.severity];
-            const imgData = detectionImages[detection.id];
-
+        <div className="divide-y divide-zinc-50">
+          {detections.map((det) => {
+            const { box, glow } = sevColors(det.severity);
+            const meta = TYPE_META[det.type];
+            const isExpanded = expandedId === det.id;
             return (
-              <div
-                key={detection.id}
-                className={`rounded-xl border transition-all duration-200 overflow-hidden ${
-                  detection.status === "active"
-                    ? "border-amber-200 bg-amber-50/60"
-                    : "border-zinc-200 bg-zinc-50/60"
-                } ${isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"}`}
-              >
-                {/* Clickable header row */}
-                <button
-                  className="w-full text-left p-4 cursor-pointer"
-                  onClick={() => setExpandedId(isExpanded ? null : detection.id)}
+              <div key={det.id}>
+                <div
+                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-zinc-50 transition-colors cursor-pointer"
+                  onClick={() => setExpandedId(isExpanded ? null : det.id)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${detection.status === "active" ? "bg-amber-100" : "bg-zinc-200"}`}>
-                        {detection.status === "active" ? (
-                          <AlertTriangle className="w-4 h-4 text-amber-600" />
-                        ) : (
-                          <CheckCircle className="w-4 h-4 text-emerald-600" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-zinc-900" style={{ fontWeight: 600, fontSize: "0.92rem" }}>
-                          {detection.type}
-                        </p>
-                        <div className="flex items-center gap-1.5 text-zinc-500 mt-0.5" style={{ fontSize: "0.8rem" }}>
-                          <Camera className="w-3.5 h-3.5" />
-                          <span>{detection.location}</span>
-                          <span className="text-zinc-300">·</span>
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>{detection.timestamp}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${sev.bg} ${sev.text}`}>
-                        {sev.label}
+                  <div className="flex-shrink-0">
+                    {det.status === "Active" ? (
+                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-zinc-900" style={{ fontSize: "0.875rem" }}>
+                        {det.type}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${SEV_CLS[det.severity]}`}>
+                        {det.severity}
                       </span>
                       <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
-                          detection.status === "active"
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-emerald-100 text-emerald-700"
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          det.status === "Active" ? "bg-amber-100 text-amber-700" : "bg-zinc-100 text-zinc-500"
                         }`}
                       >
-                        {detection.status}
+                        {det.status}
                       </span>
-                      <div className={`ml-1 p-1 rounded-full transition-colors ${isExpanded ? "bg-zinc-200" : "bg-transparent"}`}>
-                        {isExpanded ? (
-                          <ChevronUp className="w-4 h-4 text-zinc-500" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-zinc-400" />
-                        )}
-                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <span className="flex items-center gap-1 text-zinc-400" style={{ fontSize: "0.75rem" }}>
+                        <Camera className="w-3 h-3" />
+                        {det.camera}
+                      </span>
+                      <span className="text-zinc-400" style={{ fontSize: "0.75rem" }}>
+                        {det.location}
+                      </span>
                     </div>
                   </div>
-                </button>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className="flex items-center gap-1 text-zinc-400" style={{ fontSize: "0.75rem" }}>
+                      <Clock className="w-3 h-3" />
+                      {det.timestamp}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setModalDetection(det);
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-zinc-200 transition-colors"
+                    >
+                      <ZoomIn className="w-3.5 h-3.5 text-zinc-500" />
+                    </button>
+                    {isExpanded ? (
+                      <ChevronUp className="w-4 h-4 text-zinc-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-zinc-400" />
+                    )}
+                  </div>
+                </div>
 
-                {/* Expandable Image Panel */}
-                {isExpanded && imgData && (
-                  <div className="border-t border-zinc-200 bg-zinc-950">
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <Camera className="w-3.5 h-3.5 text-zinc-400" />
-                          <p className="text-zinc-300" style={{ fontSize: "0.78rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "monospace" }}>
-                            {imgData.camId} · Live Capture
-                          </p>
-                        </div>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setLightboxId(detection.id); }}
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
-                          style={{ fontSize: "0.78rem", fontWeight: 600 }}
-                        >
-                          <ZoomIn className="w-3.5 h-3.5" />
-                          Full Size
-                        </button>
-                      </div>
-
-                      {/* Camera viewport */}
-                      <div
-                        className="relative rounded-lg overflow-hidden"
-                        style={{ height: 240, background: "#0a0a0a" }}
-                      >
-                        {/* Slightly desaturated image */}
-                        <img
-                          src={imgData.url}
-                          alt={`Detection: ${detection.type}`}
-                          className="w-full h-full object-cover"
-                          style={{ filter: "saturate(0.6) contrast(1.1) brightness(0.9)" }}
-                        />
-
-                        {/* Subtle scan-line overlay */}
-                        <div
-                          className="absolute inset-0 pointer-events-none"
-                          style={{
-                            backgroundImage: "repeating-linear-gradient(0deg, rgba(0,0,0,0.08) 0px, rgba(0,0,0,0.08) 1px, transparent 1px, transparent 3px)",
-                          }}
-                        />
-
-                        {/* Corner brackets — top-left */}
-                        <div className="absolute top-2 left-2 pointer-events-none">
-                          <div style={{ width: 16, height: 16, borderTop: "2px solid #00ff88", borderLeft: "2px solid #00ff88" }} />
-                        </div>
-                        {/* Corner brackets — top-right */}
-                        <div className="absolute top-2 right-2 pointer-events-none">
-                          <div style={{ width: 16, height: 16, borderTop: "2px solid #00ff88", borderRight: "2px solid #00ff88" }} />
-                        </div>
-                        {/* Corner brackets — bottom-left */}
-                        <div className="absolute bottom-8 left-2 pointer-events-none">
-                          <div style={{ width: 16, height: 16, borderBottom: "2px solid #00ff88", borderLeft: "2px solid #00ff88" }} />
-                        </div>
-                        {/* Corner brackets — bottom-right */}
-                        <div className="absolute bottom-8 right-2 pointer-events-none">
-                          <div style={{ width: 16, height: 16, borderBottom: "2px solid #00ff88", borderRight: "2px solid #00ff88" }} />
-                        </div>
-
-                        {/* REC indicator */}
-                        <div className="absolute top-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none">
-                          <span
-                            className="w-2 h-2 rounded-full bg-red-500 animate-pulse"
-                            style={{ boxShadow: "0 0 6px #ef4444" }}
-                          />
-                          <span className="text-red-400" style={{ fontSize: "0.65rem", fontFamily: "monospace", letterSpacing: "0.1em", fontWeight: 700 }}>
-                            REC
-                          </span>
-                        </div>
-
-                        {/* Detection bounding box */}
-                        {imgData.detectionBox && (
-                          <div
-                            className="absolute pointer-events-none"
-                            style={{
-                              top: imgData.detectionBox.top,
-                              left: imgData.detectionBox.left,
-                              width: imgData.detectionBox.width,
-                              height: imgData.detectionBox.height,
-                              border: `2px solid ${detection.severity === "high" ? "#ef4444" : detection.severity === "medium" ? "#f59e0b" : "#3b82f6"}`,
-                              boxShadow: `0 0 8px ${detection.severity === "high" ? "rgba(239,68,68,0.6)" : detection.severity === "medium" ? "rgba(245,158,11,0.6)" : "rgba(59,130,246,0.6)"}`,
-                            }}
-                          >
-                            {/* Label tag on detection box */}
-                            <span
-                              className="absolute -top-5 left-0 px-1.5 py-0.5"
-                              style={{
-                                fontSize: "0.6rem",
-                                fontFamily: "monospace",
-                                fontWeight: 700,
-                                letterSpacing: "0.05em",
-                                backgroundColor: detection.severity === "high" ? "#ef4444" : detection.severity === "medium" ? "#f59e0b" : "#3b82f6",
-                                color: "white",
-                              }}
-                            >
-                              {detection.type.toUpperCase()} · {sev.label.toUpperCase()}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Bottom HUD bar */}
-                        <div
-                          className="absolute bottom-0 left-0 right-0 px-3 py-1.5 flex items-center justify-between"
-                          style={{ background: "rgba(0,0,0,0.72)" }}
-                        >
-                          <span style={{ fontSize: "0.65rem", fontFamily: "monospace", color: "#00ff88", letterSpacing: "0.06em" }}>
-                            {imgData.caption}
-                          </span>
-                          <span style={{ fontSize: "0.65rem", fontFamily: "monospace", color: "#a1a1aa" }}>
-                            SmartDome AI
-                          </span>
-                        </div>
-                      </div>
+                {isExpanded && meta && (
+                  <div className="px-5 pb-4 bg-zinc-50 border-t border-zinc-100">
+                    <div className="mt-3 max-w-md">
+                      <CctvViewport
+                        meta={meta}
+                        boxColor={box}
+                        boxGlow={glow}
+                        label={det.type.toUpperCase()}
+                        caption={`${det.camera}  ${det.timestamp}`}
+                        height="240px"
+                      />
                     </div>
+                    <p className="text-zinc-400 mt-2" style={{ fontSize: "0.72rem" }}>
+                      Detection ID: {det.id} · {det.location}
+                    </p>
                   </div>
                 )}
               </div>
@@ -391,35 +463,69 @@ export function ForeignMaterialDetection() {
         </div>
       </div>
 
-      {/* Lightbox */}
-      {lightboxId !== null && detectionImages[lightboxId] && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-6"
-          style={{ backgroundColor: "rgba(0,0,0,0.85)" }}
-          onClick={() => setLightboxId(null)}
-        >
+      {/* Modal */}
+      {modalDetection && (() => {
+        const meta = TYPE_META[modalDetection.type];
+        if (!meta) return null;
+        const { box, glow } = sevColors(modalDetection.severity);
+        return (
           <div
-            className="relative rounded-2xl overflow-hidden shadow-2xl max-w-3xl w-full"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.72)" }}
+            onClick={() => setModalDetection(null)}
           >
-            <img
-              src={detectionImages[lightboxId].url}
-              alt="Detection full view"
-              className="w-full object-cover"
-              style={{ maxHeight: "70vh" }}
-            />
-            <div className="absolute bottom-0 left-0 right-0 px-5 py-4" style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.7))" }}>
-              <p className="text-white" style={{ fontSize: "0.9rem" }}>{detectionImages[lightboxId].caption}</p>
-            </div>
-            <button
-              className="absolute top-3 right-3 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
-              onClick={() => setLightboxId(null)}
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
             >
-              <X className="w-5 h-5" />
-            </button>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
+                <div>
+                  <h4 className="font-semibold text-zinc-900">{modalDetection.type}</h4>
+                  <p className="text-zinc-400" style={{ fontSize: "0.75rem" }}>
+                    {modalDetection.id} · {modalDetection.camera}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setModalDetection(null)}
+                  className="p-2 rounded-lg hover:bg-zinc-100 transition-colors"
+                >
+                  <X className="w-4 h-4 text-zinc-500" />
+                </button>
+              </div>
+              <div className="p-5">
+                <CctvViewport
+                  meta={meta}
+                  boxColor={box}
+                  boxGlow={glow}
+                  label={modalDetection.type.toUpperCase()}
+                  caption={`${modalDetection.camera}  ${modalDetection.timestamp}`}
+                  height="300px"
+                />
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  {[
+                    { label: "Location",  value: modalDetection.location },
+                    { label: "Timestamp", value: modalDetection.timestamp },
+                    { label: "Severity",  value: modalDetection.severity },
+                    { label: "Status",    value: modalDetection.status },
+                  ].map((f) => (
+                    <div key={f.label} className="bg-zinc-50 rounded-lg p-3">
+                      <p
+                        className="text-zinc-400"
+                        style={{ fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.06em" }}
+                      >
+                        {f.label}
+                      </p>
+                      <p className="text-zinc-800 font-medium mt-0.5" style={{ fontSize: "0.85rem" }}>
+                        {f.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

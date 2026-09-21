@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Building2, AlertTriangle, Package, AlertCircle, CheckCircle, ArrowRight, Activity } from "lucide-react";
+import { Building2, AlertTriangle, AlertCircle, CheckCircle, ArrowRight, Activity } from "lucide-react";
 import { useSite } from "../context/SiteContext";
 
 export function Dashboard() {
@@ -10,36 +10,26 @@ export function Dashboard() {
       structuralHealth: "94%",
       beamsInspection: 2,
       foreignAlerts: 3,
-      inventory: "8,450 tons",
-      capacity: "87%",
     },
     "Nutrien Lanigan": {
       structuralHealth: "96%",
       beamsInspection: 1,
       foreignAlerts: 2,
-      inventory: "9,200 tons",
-      capacity: "92%",
     },
     "Nutrien Cory": {
       structuralHealth: "92%",
       beamsInspection: 3,
       foreignAlerts: 4,
-      inventory: "7,800 tons",
-      capacity: "78%",
     },
     "Nutrien Rocanville": {
       structuralHealth: "95%",
       beamsInspection: 1,
       foreignAlerts: 1,
-      inventory: "8,900 tons",
-      capacity: "89%",
     },
     "Mosaic Esterhazy": {
       structuralHealth: "93%",
       beamsInspection: 2,
       foreignAlerts: 5,
-      inventory: "8,100 tons",
-      capacity: "81%",
     },
   };
 
@@ -68,24 +58,13 @@ export function Dashboard() {
       accentBg: "bg-amber-50",
       iconColor: "text-amber-600",
     },
-    {
-      title: "Potash Inventory",
-      value: currentData.inventory,
-      status: "good",
-      icon: Package,
-      link: "/inventory",
-      description: `${currentData.capacity} capacity utilized`,
-      accent: "#3b82f6",
-      accentBg: "bg-blue-50",
-      iconColor: "text-blue-600",
-    },
   ];
 
   const activities = [
     { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50", message: "Foreign material detected in Barn 3", time: "12 minutes ago" },
     { icon: Building2, color: "text-[#5f352e]", bg: "bg-[#5f352e]/10", message: "Beam B-07 stress levels increased", time: "1 hour ago" },
-    { icon: Package, color: "text-emerald-600", bg: "bg-emerald-50", message: "Inventory replenishment completed — Barn 1", time: "3 hours ago" },
     { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50", message: "Bird droppings detected in Barn 2", time: "5 hours ago" },
+    { icon: Building2, color: "text-[#5f352e]", bg: "bg-[#5f352e]/10", message: "Beam C-03 returned to normal stress", time: "8 hours ago" },
   ];
 
   return (
@@ -103,7 +82,7 @@ export function Dashboard() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
